@@ -45,7 +45,7 @@ namespace EventStreamDb.Example
         {
             private readonly List<decimal> _temperatures = new List<decimal>();
 
-            public void Recieved(SensorDataRecieved data)
+            public void Received(SensorDataRecieved data)
             {
                 _temperatures.Add(data.Temperature);
                 Console.WriteLine($"Temp: {data.Temperature} (avg: ${_temperatures.Average()})");

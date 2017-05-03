@@ -153,27 +153,23 @@ namespace EventStreamDb
 
     public interface IListenFor<T>
     {
-        void Recieved(T data, EventMetaData metaData);
+        void Received(T data, EventMetaData metaData);
     }
 
-
-    public class TimeSpatialList<T>
+    public abstract class ExpiringTimeSpatialList<T>
     {
-        private Queue<TimeSeriesData> _data = new Queue<TimeSeriesData>();
+        protected Queue<TimeSeriesData> _seriesData = new Queue<TimeSeriesData>();
+        protected readonly object _dataLock = new object();
         private readonly Func<DateTime> _currentTimeResolver;
-        private readonly Timer _timer;
-        private readonly object _dataLock = new object();
         private readonly TimeSpan _dataValidityPeriod;
 
-        public TimeSpatialList(Func<DateTime> currentTimeResolver, TimeSpan dataValidityPeriod)
+        public ExpiringTimeSpatialList(Func<DateTime> currentTimeResolver, TimeSpan dataValidityPeriod)
         {
             _currentTimeResolver = currentTimeResolver;
             _dataValidityPeriod = dataValidityPeriod;
-
-            _timer = new Timer(TimerCallbackHandler, null, Timeout.Infinite, Timeout.Infinite);
         }
 
-        private class TimeSeriesData
+        protected class TimeSeriesData
         {
             public TimeSeriesData(DateTime timeStamp, T data)
             {
@@ -187,13 +183,44 @@ namespace EventStreamDb
 
         public void Add(DateTime timeStamp, T data)
         {
+            DateTime latestTimeStamp = DateTime.MinValue;
+
             lock (_dataLock)
             {
-                _data.Enqueue(new TimeSeriesData(timeStamp, data));
-                _data = new Queue<TimeSeriesData>(_data.ToArray().OrderBy(x => x.TimeStamp));
+                _seriesData.Enqueue(new TimeSeriesData(timeStamp, data));
+                var orderedData = _seriesData.OrderBy(x => x.TimeStamp).ToArray();
+                latestTimeStamp = orderedData.LastOrDefault()?.TimeStamp ?? DateTime.MinValue;
+                _seriesData = new Queue<TimeSeriesData>(orderedData);
             }
 
-            TimerCallbackHandler(null);
+            DataUpdated(latestTimeStamp);
+        }
+
+        protected virtual void DataUpdated(DateTime latestTimeStamp) { }
+
+        protected void RemoveExpiredItems()
+        {
+            while (_seriesData.Count > 0 && DataHasExpired(_seriesData.Peek()))
+            {
+                _seriesData.Dequeue();
+            }
+        }
+
+        protected bool DataHasExpired(TimeSeriesData data)
+        {
+            return data.TimeStamp < (_currentTimeResolver() - _dataValidityPeriod);
+        }
+
+    }
+
+    public class RealtimeExpiringTimeSpatialList<T> : ExpiringTimeSpatialList<T>
+    {
+        private readonly Timer _timer;
+
+        public RealtimeExpiringTimeSpatialList(Func<DateTime> currentTimeResolver, TimeSpan dataValidityPeriod)
+            : base(currentTimeResolver, dataValidityPeriod)
+        {
+            _timer = new Timer(TimerCallbackHandler, null, Timeout.Infinite, Timeout.Infinite);
         }
 
         private void TimerCallbackHandler(object data)
@@ -202,27 +229,13 @@ namespace EventStreamDb
             {
                 RemoveExpiredItems();
 
-                if (_data.Count > 0)
+                if (_seriesData.Count > 0)
                 {
-                    var waitTime = _data.Peek().TimeStamp - _currentTimeResolver();
+                    var waitTime = _seriesData.Peek().TimeStamp - _currentTimeResolver();
                     _timer.Change(waitTime, TimeSpan.FromMilliseconds(-1));
                 }
             }
         }
-
-        private void RemoveExpiredItems()
-        {
-            while (_data.Count > 0 && DataHasExpired(_data.Peek()))
-            {
-                _data.Dequeue();
-            }
-        }
-
-        private bool DataHasExpired(TimeSeriesData data)
-        {
-            return data.TimeStamp < (_currentTimeResolver() - _dataValidityPeriod);
-        }
-
-    }
+    } 
 
 }
