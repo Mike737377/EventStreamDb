@@ -25,4 +25,13 @@ namespace EventStreamDb.Example
     }
 
     public class SensorOffline { }
+
+    public class IntermittentSensor {
+        public string Name { get; }
+
+        public IntermittentSensor(string name)
+        {
+            Name = name;
+        }
+    }
 }

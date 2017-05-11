@@ -1,27 +1,65 @@
-﻿using System;
+﻿using NPoco;
+using System;
 
 namespace EventStreamDb.Persistance.NPoco
 {
     public class NPocoPersistanceStore : IEventPersistanceStore
     {
-        public void StoreEvent<T>(T @event, EventMetaData metaData)
+        private readonly IDatabase _database;
+
+        public NPocoPersistanceStore(IDatabase database)
         {
-            throw new NotImplementedException();
+            _database = database;
         }
 
-        public void BeginTransaction()
+        public void StoreEvent<T>(T @event, EventMetaData metaData)
         {
-            throw new NotImplementedException();
+            _database.Insert(new StoredEvent(@event, metaData));
         }
-        
-        public void Rollback()
+
+        public IEventPersistanceStoreTransaction BeginTransaction()
         {
-            throw new NotImplementedException();
+            return new Transaction(_database, _database.GetTransaction());
         }
-        
-        public void Commit()        
+
+        public class Transaction : IEventPersistanceStoreTransaction
         {
-            throw new NotImplementedException();
+            private readonly ITransaction _transaction;
+            private readonly IDatabase _database;
+
+            public Transaction(IDatabase database, ITransaction transaction)
+            {
+                _database = database;
+                _transaction = transaction;
+            }
+
+            public void StoreEvent<T>(T @event, EventMetaData metaData)
+            {
+                _database.Insert(new StoredEvent(@event, metaData));
+            }
+
+            public void Rollback()
+            {
+                _transaction.Dispose();
+            }
+
+            public void Commit()
+            {
+                _transaction.Complete();
+            }
         }
+    }
+
+    public class StoredEvent 
+    {
+        private StoredEvent() { }
+        public StoredEvent(object @event, EventMetaData metaData)
+        {
+            Event = @event;
+            MetaData = metaData;
+        }
+
+        public EventMetaData MetaData { get; private set; }
+        public object Event { get; private set;}
     }
 }

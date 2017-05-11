@@ -23,7 +23,7 @@
         {
             "taskName": "build",
             "args": [
-                "${workspaceRoot}/EventStreamDb.sln",
+                "${workspaceRoot}/EventStreamDb.sln"
             ],
             "isBuildCommand": true,
             "problemMatcher": "$msCompile"

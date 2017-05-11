@@ -16,15 +16,18 @@ namespace EventStreamDb
         IEventStream Process<T>(IEnumerable<T> @event, Action<EventMetaData> eventMetaDataModifier);
     }
 
-    public interface IConfig
-    {
-        DateTime GetCurrentTimeStamp();
-        IEventPersistanceStore GetPersistanceStore();
-    }
-
     public class EventStream : IEventStream
     {
         private readonly IConfig _configuration;
+        private readonly IPipeline _pipeline;
+
+        public EventStream(Action<EventStreamConfigBuilder> configure)
+        {
+            var builder = new EventStreamConfigBuilder();
+            configure(builder);
+
+            _configuration = builder.BuildConfig();
+        }
 
         public EventStream(IConfig configuration)
         {
@@ -77,10 +80,12 @@ namespace EventStreamDb
     {
         private readonly Guid _commitId = Guid.NewGuid();
         private readonly IConfig _configuration;
+        private readonly IEventPersistanceStoreTransaction _transaction;
 
         public EventStreamTransaction(IConfig configuration)
         {
             _configuration = configuration;
+            _transaction = _configuration.GetPersistanceStore().BeginTransaction();
         }
 
         public ITransactionBoundEventStream Process<T>(T @event)
@@ -100,7 +105,16 @@ namespace EventStreamDb
             var metaData = BuildEventMetaData(@event);
             eventMetaDataModifier?.Invoke(metaData);
 
-            _configuration.GetPersistanceStore().StoreEvent(@event, metaData);
+            _transaction.StoreEvent(@event, metaData);
+
+            var listenerInstances = _configuration.Hooks.Listeners.ForType<T>()
+                .Select(x => _configuration.ServiceFactory.GetInstance(x) as IListenFor<T>)
+                .ToArray();
+
+            foreach (var listener in listenerInstances)
+            {
+                listener.Received(@event, metaData);
+            }
 
             return this;
         }
@@ -127,12 +141,12 @@ namespace EventStreamDb
 
         public void Commit()
         {
-            _configuration.GetPersistanceStore().Commit();
+            _transaction.Commit();
         }
 
         public void Rollback()
         {
-            _configuration.GetPersistanceStore().Rollback();
+            _transaction.Rollback();
         }
     }
 
@@ -151,11 +165,28 @@ namespace EventStreamDb
         TOut Transform(TIn source);
     }
 
-    public interface IListen { }
-
-    public interface IListenFor<T> : IListen
+    public interface IListenFor<T> 
     {
         void Received(T data, EventMetaData metaData);
     }
+}
 
+public interface IPipeline
+{
+    T Process<T>(T @event, EventMetaData metaData);
+}
+
+public class ListenerPipeline : IPipeline
+{
+    private readonly IPipeline _innerPipeline;
+
+    public ListenerPipeline(IPipeline innerPipeline)
+    {
+        _innerPipeline = innerPipeline;
+    }
+
+    public T Process<T>(T @event, EventMetaData metaData)
+    {
+        return _innerPipeline.Process(@event, metaData);
+    }
 }
