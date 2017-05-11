@@ -4,10 +4,26 @@
     "isShellCommand": true,
     "args": [],
     "tasks": [
+        // {
+        //     "taskName": "build",
+        //     "args": [
+        //         "${workspaceRoot}/EventStreamDb.Example/EventStreamDb.Example.csproj",
+        //     ],
+        //     "isBuildCommand": true,
+        //     "problemMatcher": "$msCompile"
+        // },
+        // {
+        //     "taskName": "build",
+        //     "args": [
+        //         "${workspaceRoot}/EventStreamDb.Persistance.NPoco/EventStreamDb.Persistance.NPoco.csproj",
+        //     ],
+        //     "isBuildCommand": true,
+        //     "problemMatcher": "$msCompile"
+        // }
         {
             "taskName": "build",
             "args": [
-                "${workspaceRoot}/EventStreamDb.Example/EventStreamDb.Example.csproj"
+                "${workspaceRoot}/EventStreamDb.sln",
             ],
             "isBuildCommand": true,
             "problemMatcher": "$msCompile"

@@ -83,11 +83,6 @@ namespace EventStreamDb
             _configuration = configuration;
         }
 
-        public void Commit()
-        {
-            throw new NotImplementedException();
-        }
-
         public ITransactionBoundEventStream Process<T>(T @event)
         {
             Process(@event, null);
@@ -105,7 +100,17 @@ namespace EventStreamDb
             var metaData = BuildEventMetaData(@event);
             eventMetaDataModifier?.Invoke(metaData);
 
-            Process(@event, metaData);
+            _configuration.GetPersistanceStore().StoreEvent(@event, metaData);
+
+            return this;
+        }
+
+        public ITransactionBoundEventStream Process<T>(IEnumerable<T> @events, Action<EventMetaData> eventMetaDataModifier)
+        {
+            foreach (var @event in @events)
+            {
+                Process(@event, eventMetaDataModifier);
+            }
 
             return this;
         }
@@ -120,19 +125,14 @@ namespace EventStreamDb
             };
         }
 
-        public ITransactionBoundEventStream Process<T>(IEnumerable<T> @events, Action<EventMetaData> eventMetaDataModifier)
+        public void Commit()
         {
-            foreach (var @event in @events)
-            {
-                Process(@event, eventMetaDataModifier);
-            }
-
-            return this;
+            _configuration.GetPersistanceStore().Commit();
         }
 
         public void Rollback()
         {
-            throw new NotImplementedException();
+            _configuration.GetPersistanceStore().Rollback();
         }
     }
 
@@ -151,91 +151,11 @@ namespace EventStreamDb
         TOut Transform(TIn source);
     }
 
-    public interface IListenFor<T>
+    public interface IListen { }
+
+    public interface IListenFor<T> : IListen
     {
         void Received(T data, EventMetaData metaData);
     }
-
-    public abstract class ExpiringTimeSpatialList<T>
-    {
-        protected Queue<TimeSeriesData> _seriesData = new Queue<TimeSeriesData>();
-        protected readonly object _dataLock = new object();
-        private readonly Func<DateTime> _currentTimeResolver;
-        private readonly TimeSpan _dataValidityPeriod;
-
-        public ExpiringTimeSpatialList(Func<DateTime> currentTimeResolver, TimeSpan dataValidityPeriod)
-        {
-            _currentTimeResolver = currentTimeResolver;
-            _dataValidityPeriod = dataValidityPeriod;
-        }
-
-        protected class TimeSeriesData
-        {
-            public TimeSeriesData(DateTime timeStamp, T data)
-            {
-                TimeStamp = timeStamp;
-                Data = data;
-            }
-
-            public DateTime TimeStamp { get; }
-            public T Data { get; }
-        }
-
-        public void Add(DateTime timeStamp, T data)
-        {
-            DateTime latestTimeStamp = DateTime.MinValue;
-
-            lock (_dataLock)
-            {
-                _seriesData.Enqueue(new TimeSeriesData(timeStamp, data));
-                var orderedData = _seriesData.OrderBy(x => x.TimeStamp).ToArray();
-                latestTimeStamp = orderedData.LastOrDefault()?.TimeStamp ?? DateTime.MinValue;
-                _seriesData = new Queue<TimeSeriesData>(orderedData);
-            }
-
-            DataUpdated(latestTimeStamp);
-        }
-
-        protected virtual void DataUpdated(DateTime latestTimeStamp) { }
-
-        protected void RemoveExpiredItems()
-        {
-            while (_seriesData.Count > 0 && DataHasExpired(_seriesData.Peek()))
-            {
-                _seriesData.Dequeue();
-            }
-        }
-
-        protected bool DataHasExpired(TimeSeriesData data)
-        {
-            return data.TimeStamp < (_currentTimeResolver() - _dataValidityPeriod);
-        }
-
-    }
-
-    public class RealtimeExpiringTimeSpatialList<T> : ExpiringTimeSpatialList<T>
-    {
-        private readonly Timer _timer;
-
-        public RealtimeExpiringTimeSpatialList(Func<DateTime> currentTimeResolver, TimeSpan dataValidityPeriod)
-            : base(currentTimeResolver, dataValidityPeriod)
-        {
-            _timer = new Timer(TimerCallbackHandler, null, Timeout.Infinite, Timeout.Infinite);
-        }
-
-        private void TimerCallbackHandler(object data)
-        {
-            lock (_dataLock)
-            {
-                RemoveExpiredItems();
-
-                if (_seriesData.Count > 0)
-                {
-                    var waitTime = _seriesData.Peek().TimeStamp - _currentTimeResolver();
-                    _timer.Change(waitTime, TimeSpan.FromMilliseconds(-1));
-                }
-            }
-        }
-    } 
 
 }

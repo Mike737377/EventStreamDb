@@ -29,23 +29,24 @@ namespace EventStreamDb.Example
 
             eventStream
                 .Process(new SensorOnline("CPU"))
-                .Process(new SensorDataRecieved(45.3m))
-                .Process(new SensorDataRecieved(42.6m))
-                .Process(new SensorDataRecieved(40.1m))
-                .Process(new SensorDataRecieved(40.1m))
-                .Process(new SensorDataRecieved(40.1m))
-                .Process(new SensorDataRecieved(39m))
+                .Process(new SensorDataReceived(45.3m))
+                .Process(new SensorDataReceived(42.6m))
+                .Process(new SensorDataReceived(40.1m))
+                .Process(new SensorDataReceived(40.1m))
+                .Process(new SensorDataReceived(40.1m))
+                .Process(new SensorDataReceived(39m))
                 .Process(new SensorOffline())
                 .Process(new SensorOnline("CPU"))
-                .Process(new SensorDataRecieved(40.5m))
+                .Process(new SensorDataReceived(40.5m))
                 .Process(new SensorOffline());
         }
 
-        public class AverageTemperature : IListenFor<SensorDataRecieved>
+        public class AverageTemperature : 
+            IListenFor<SensorDataReceived>
         {
             private readonly List<decimal> _temperatures = new List<decimal>();
 
-            public void Received(SensorDataRecieved data)
+            public void Received(SensorDataReceived data, EventMetaData metaData)
             {
                 _temperatures.Add(data.Temperature);
                 Console.WriteLine($"Temp: {data.Temperature} (avg: ${_temperatures.Average()})");

@@ -6,6 +6,25 @@ namespace EventStreamDb.Persistance
 {
     public class InMemoryPersistanceStore : IEventPersistanceStore
     {
+        private List<StoredEvent> _events = new List<StoredEvent>();
+        private List<StoredEvent> _transactionEvents;
+
+        public void BeginTransaction()
+        {
+            _transactionEvents = new List<StoredEvent>();
+        }
+
+        public void Commit()
+        {
+            _events.AddRange(_transactionEvents);
+            _transactionEvents = null;
+        }
+
+        public void Rollback()
+        {
+            _transactionEvents = null;
+        }
+
         //public IEnumerable<EventData> GetEvents()
         //{
         //    throw new NotImplementedException();
@@ -18,7 +37,7 @@ namespace EventStreamDb.Persistance
 
         public void StoreEvent<T>(T @event, EventMetaData metaData)
         {
-            throw new NotImplementedException();
+            _events.Add(new StoredEvent(@event, metaData));
         }
     }
 }

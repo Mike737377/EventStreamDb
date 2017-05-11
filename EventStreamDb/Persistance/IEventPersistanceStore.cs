@@ -10,7 +10,7 @@ namespace EventStreamDb.Persistance
         void Rollback();
         void Commit();
 
-        //IEnumerable<EventData> GetEvents();
-        //IEnumerable<EventData> GetEvents(Guid streamId);
+        // IEnumerable<EventData> GetEvents();
+        // IEnumerable<EventData> GetEvents(Guid streamId);
     }
 }

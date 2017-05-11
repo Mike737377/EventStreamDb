@@ -7,16 +7,19 @@ namespace EventStreamDb
 {
     public class Loader
     {
-        public KeyValuesStore<Type, IEventStreamStore> Stores { get; } = new KeyValuesStore<Type, IEventStreamStore>();
-        //public Dictionary<Type, List<ITransform<,>>
+        // public KeyValuesStore<Type, IEventStreamStore> Stores { get; } = new KeyValuesStore<Type, IEventStreamStore>();
+        // public Dictionary<Type, List<ITransform<,>>
+
+        public Dictionary<Type, List<IListen>> Listeners { get; } = new Dictionary<Type, List<IListen>>();
 
         public void ScanAssembly(Assembly assembly)
         {
-            GetTypesWhichImplement(typeof(ICanStore))
-                .Select(x=>
-                {
-                    typeof()
-                });
+            // GetTypesWhichImplement(typeof(IListenFor<>), assembly).Select(x=> x. )
+            // GetTypesWhichImplement(typeof(IStore<>), assembly)
+            //     .Select(x=>
+            //     {
+            //         typeof()
+            //     });
         }
 
         private Type[] GetTypesWhichImplement(Type typeToImplement, Assembly assemblyToScan)

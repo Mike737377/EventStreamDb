@@ -14,11 +14,11 @@ namespace EventStreamDb.Example
         }
     }
 
-    public class SensorDataRecieved
+    public class SensorDataReceived
     {
         public decimal Temperature { get; }
 
-        public SensorDataRecieved(decimal temperature)
+        public SensorDataReceived(decimal temperature)
         {
             Temperature = temperature;
         }
