@@ -2,9 +2,14 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace EventStreamDb.Example
+namespace EventStreamDb.Examples.Sensor
 {
-    public class SensorOnline
+    public abstract class Event : IEvent
+    {
+        public DateTime TimeStamp { get; } = CurrentTime.GetTime();
+    }
+
+    public class SensorOnline : Event
     {
         public string Name { get; }
 
@@ -14,7 +19,7 @@ namespace EventStreamDb.Example
         }
     }
 
-    public class SensorDataReceived
+    public class SensorDataReceived : Event
     {
         public decimal Temperature { get; }
 
@@ -24,9 +29,10 @@ namespace EventStreamDb.Example
         }
     }
 
-    public class SensorOffline { }
+    public class SensorOffline : Event { }
 
-    public class IntermittentSensor {
+    public class IntermittentSensor : Event
+    {
         public string Name { get; }
 
         public IntermittentSensor(string name)

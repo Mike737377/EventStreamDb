@@ -5,14 +5,42 @@
    "version": "0.2.0",
    "configurations": [
         {
-            "name": ".NET Core Launch (console)",
+            "name": "Examples - Csv Import Launch (console)",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceRoot}/EventStreamDb.Example/bin/Debug/netcoreapp1.1/EventStreamDb.Example.dll",
+            "program": "${workspaceRoot}/Examples/EventStreamDb.Examples.CsvImport/bin/Debug/netcoreapp1.1/EventStreamDb.Examples.CsvImport.dll",
             "args": [],
-            "cwd": "${workspaceRoot}/EventStreamDb.Example",
+            "cwd": "${workspaceRoot}/Examples/EventStreamDb.Examples.CsvImport",
+            // For more information about the 'console' field, see https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md#console-terminal-window
+            "console": "internalConsole",
+            "stopAtEntry": false,
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "name": "Examples - Twitter Clone Launch (console)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceRoot}/Examples/EventStreamDb.Examples.TwitterClone/bin/Debug/netcoreapp1.1/EventStreamDb.Examples.TwitterClone.dll",
+            "args": [],
+            "cwd": "${workspaceRoot}/Examples/EventStreamDb.Examples.TwitterClone",
+            // For more information about the 'console' field, see https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md#console-terminal-window
+            "console": "internalConsole",
+            "stopAtEntry": false,
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "name": "Examples - Sensor Launch (console)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceRoot}/Examples/EventStreamDb.Examples.Sensor/bin/Debug/netcoreapp1.1/EventStreamDb.Examples.Sensor.dll",
+            "args": [],
+            "cwd": "${workspaceRoot}/Examples/EventStreamDb.Examples.Sensor",
             // For more information about the 'console' field, see https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md#console-terminal-window
             "console": "internalConsole",
             "stopAtEntry": false,

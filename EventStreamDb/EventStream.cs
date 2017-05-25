@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using EventStreamDb.Persistance;
+using System.Reflection;
 using System.Threading;
 using System.Linq;
 
@@ -10,16 +11,16 @@ namespace EventStreamDb
     public interface IEventStream
     {
         IEventStream Process<T>(T @event);
-        IEventStream Process<T>(IEnumerable<T> @event);
+        IEventStream Process<T>(IEnumerable<T> @events);
 
         IEventStream Process<T>(T @event, Action<EventMetaData> eventMetaDataModifier);
-        IEventStream Process<T>(IEnumerable<T> @event, Action<EventMetaData> eventMetaDataModifier);
+        IEventStream Process<T>(IEnumerable<T> @events, Action<EventMetaData> eventMetaDataModifier);
     }
 
     public class EventStream : IEventStream
     {
         private readonly IConfig _configuration;
-        private readonly IPipeline _pipeline;
+        //private readonly IPipeline _pipeline;
 
         public EventStream(Action<EventStreamConfigBuilder> configure)
         {
@@ -45,9 +46,9 @@ namespace EventStreamDb
             return this;
         }
 
-        public IEventStream Process<T>(IEnumerable<T> @event)
+        public IEventStream Process<T>(IEnumerable<T> @events)
         {
-            GetTransaction().Process(@event).Commit();
+            GetTransaction().Process(@events).Commit();
             return this;
         }
 
@@ -102,18 +103,51 @@ namespace EventStreamDb
 
         public ITransactionBoundEventStream Process<T>(T @event, Action<EventMetaData> eventMetaDataModifier)
         {
+            var eventType = @event.GetType();
             var metaData = BuildEventMetaData(@event);
             eventMetaDataModifier?.Invoke(metaData);
 
+            var storeType = typeof(IStore<>).MakeGenericType(eventType).GetTypeInfo();
+            var storeMethod = storeType.GetDeclaredMethods("Store").FirstOrDefault(x => x.GetParameters().FirstOrDefault()?.ParameterType == eventType);
+            var transformerMethod = eventType.GetTypeInfo().GetDeclaredMethods("Transform").FirstOrDefault(x => x.GetParameters().FirstOrDefault()?.ParameterType == eventType);
+            var listenForType = typeof(IListenFor<>).MakeGenericType(eventType).GetTypeInfo();
+            var recievedMethod = listenForType.GetDeclaredMethods("Received").FirstOrDefault(x => x.GetParameters().FirstOrDefault()?.ParameterType == eventType);
+
             _transaction.StoreEvent(@event, metaData);
 
-            var listenerInstances = _configuration.Hooks.Listeners.ForType<T>()
-                .Select(x => _configuration.ServiceFactory.GetInstance(x) as IListenFor<T>)
+            var storeInstances = _configuration.Hooks.Stores.ForType(eventType)
+                .Select(x => _configuration.ServiceFactory.GetService(x))
+                .ToArray();
+
+            foreach (var store in storeInstances)
+            {
+                storeMethod.Invoke(store, new object[] { @event, metaData });
+                //store.Store(@event, metaData);
+            }
+
+            var transformerInstances = _configuration.Hooks.Transformers.ForType(eventType)
+                .Select(x => _configuration.ServiceFactory.GetService(x))
+                .ToArray();
+
+            if (transformerInstances.Any())
+            {
+                foreach (var transformer in transformerInstances)
+                {
+                    transformerMethod.Invoke(transformer, new object[] { @event, metaData });
+                    //transformer.Transform(@event, metaData);
+                }
+
+                return this;
+            }
+
+            var listenerInstances = _configuration.Hooks.Listeners.ForType(eventType)
+                .Select(x => _configuration.ServiceFactory.GetService(x))
                 .ToArray();
 
             foreach (var listener in listenerInstances)
             {
-                listener.Received(@event, metaData);
+                recievedMethod.Invoke(listener, new object[] { @event, metaData });
+                //listener.Received(@event, metaData);
             }
 
             return this;
@@ -135,7 +169,7 @@ namespace EventStreamDb
             {
                 CommitId = _commitId,
                 EventType = @event.GetType(),
-                TimeStamp = _configuration.GetCurrentTimeStamp(),
+                TimeStamp = _configuration.GetCurrentTimeStamp(@event),
             };
         }
 
@@ -151,42 +185,38 @@ namespace EventStreamDb
     }
 
 
-    public interface ICanStore { }
-
-    public interface IStore<T> : ICanStore
+    public interface IStore<T>
     {
-        void Store(T data, EventMetaData metaData);
+        void Store(T @event, EventMetaData metaData);
     }
 
-    public interface ICanTransform { }
-
-    public interface ITransform<TIn, TOut> : ICanTransform
+    public interface ITransform<T>
     {
-        TOut Transform(TIn source);
+        void Transform(T @event, EventMetaData metaData);
     }
 
-    public interface IListenFor<T> 
+    public interface IListenFor<T>
     {
-        void Received(T data, EventMetaData metaData);
+        void Received(T @event, EventMetaData metaData);
     }
 }
 
-public interface IPipeline
-{
-    T Process<T>(T @event, EventMetaData metaData);
-}
+//public interface IPipeline
+//{
+//    T Process<T>(T @event, EventMetaData metaData);
+//}
 
-public class ListenerPipeline : IPipeline
-{
-    private readonly IPipeline _innerPipeline;
+//public class ListenerPipeline : IPipeline
+//{
+//    private readonly IPipeline _innerPipeline;
 
-    public ListenerPipeline(IPipeline innerPipeline)
-    {
-        _innerPipeline = innerPipeline;
-    }
+//    public ListenerPipeline(IPipeline innerPipeline)
+//    {
+//        _innerPipeline = innerPipeline;
+//    }
 
-    public T Process<T>(T @event, EventMetaData metaData)
-    {
-        return _innerPipeline.Process(@event, metaData);
-    }
-}
+//    public T Process<T>(T @event, EventMetaData metaData)
+//    {
+//        return _innerPipeline.Process(@event, metaData);
+//    }
+//}

@@ -6,15 +6,19 @@ using System.Reflection;
 namespace EventStreamDb
 {
 
-        public class ProcessHooks
-        {
-            public TypeMap Listeners { get; }
+    public class ProcessHooks
+    {
+        public TypeMap Listeners { get; }
+        public TypeMap Stores { get; }
+        public TypeMap Transformers { get; }
 
-            public ProcessHooks(TypeMap listeners)
-            {
-                Listeners = listeners;
-            }
+        public ProcessHooks(TypeMap stores, TypeMap transformers, TypeMap listeners)
+        {
+            Stores = stores;
+            Transformers = transformers;
+            Listeners = listeners;
         }
+    }
 
     public class TypeMap
     {
@@ -41,28 +45,30 @@ namespace EventStreamDb
 
         public IEnumerable<Type> ForType<T>()
         {
-            var type = typeof(T);
+            return ForType(typeof(T));
+        }
 
+        public IEnumerable<Type> ForType(Type type)
+        {
             if (types.ContainsKey(type))
             {
                 return types[type].ToArray();
             }
 
-            return new Type[] {};
+            return new Type[] { };
 
         }
     }
 
     public class Loader
     {
-        // public KeyValuesStore<Type, IEventStreamStore> Stores { get; } = new KeyValuesStore<Type, IEventStreamStore>();
-        // public Dictionary<Type, List<ITransform<,>>
-
         public TypeMap Listeners { get; set; } = new TypeMap();
+        public TypeMap Stores { get; set; } = new TypeMap();
+        public TypeMap Transformers { get; set; } = new TypeMap();
 
         public ProcessHooks GetProcessHooks()
         {
-            return new ProcessHooks(Listeners);
+            return new ProcessHooks(Stores, Transformers, Listeners);
         }
 
         public Loader ScanAssemblies(Assembly[] assemblies)
@@ -70,15 +76,11 @@ namespace EventStreamDb
             foreach (var assembly in assemblies)
             {
                 Listeners = Listeners.Combine(GetTypesWhichImplementGeneric(typeof(IListenFor<>), assembly));
+                Transformers = Transformers.Combine(GetTypesWhichImplementGeneric(typeof(ITransform<>), assembly));
+                Stores = Stores.Combine(GetTypesWhichImplementGeneric(typeof(IStore<>), assembly));
             }
 
             return this;
-
-            // GetTypesWhichImplement(typeof(IStore<>), assembly)
-            //     .Select(x=>
-            //     {
-            //         typeof()
-            //     });
         }
 
         private Type[] GetTypesWhichImplement(Type typeToImplement, Assembly assemblyToScan)
@@ -92,9 +94,10 @@ namespace EventStreamDb
                 .Select(x => new
                 {
                     Type = x,
+                    TypeInfo = x.GetTypeInfo(),
                     Interfaces = x.GetInterfaces().Where(i => i.GetTypeInfo().IsGenericType && i.GetGenericTypeDefinition() == typeToImplement).ToArray()
                 })
-                .Where(x => x.Interfaces.Any())
+                .Where(x => x.TypeInfo.IsClass && !x.TypeInfo.IsAbstract && x.Interfaces.Any())
                 .SelectMany(x => x.Interfaces.Select(v => new { Type = x.Type, TargettingType = v.GenericTypeArguments.Single() }))
                 .GroupBy(x => x.TargettingType, r => r.Type)
                 .ToDictionary(x => x.Key, r => r.ToArray());

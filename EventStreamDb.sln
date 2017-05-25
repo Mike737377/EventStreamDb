@@ -5,7 +5,11 @@ VisualStudioVersion = 15.0.26403.7
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStreamDb", "EventStreamDb\EventStreamDb.csproj", "{84B4C9FF-1DCC-4BE1-B0AB-DFE343E47EEC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStreamDb.Example", "EventStreamDb.Example\EventStreamDb.Example.csproj", "{77EA5D27-7936-4FD3-81AA-59D974EB3E97}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStreamDb.Examples.CsvImport", "Examples\EventStreamDb.Examples.CsvImport\EventStreamDb.Examples.CsvImport.csproj", "{C7EA5D27-7936-4FD3-81AA-59D974EB3E9C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStreamDb.Examples.Sensor", "Examples\EventStreamDb.Examples.Sensor\EventStreamDb.Examples.Sensor.csproj", "{77EA5D27-7936-4FD3-81AA-59D974EB3E97}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStreamDb.Example.TwitterClone", "Examples\EventStreamDb.Examples.TwitterClone\EventStreamDb.Examples.TwitterClone.csproj", "{A7EA5D27-7936-4FD3-81AA-59D974EB3E9A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStreamDb.Persistance.NPoco", "EventStreamDb.Persistance.NPoco\EventStreamDb.Persistance.NPoco.csproj", "{67EA5D27-7936-4FD3-81AA-59D93DAB3E91}"
 EndProject
@@ -19,10 +23,18 @@ Global
 		{84B4C9FF-1DCC-4BE1-B0AB-DFE343E47EEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{84B4C9FF-1DCC-4BE1-B0AB-DFE343E47EEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{84B4C9FF-1DCC-4BE1-B0AB-DFE343E47EEC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C7EA5D27-7936-4FD3-81AA-59D974EB3E9C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C7EA5D27-7936-4FD3-81AA-59D974EB3E9C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C7EA5D27-7936-4FD3-81AA-59D974EB3E9C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C7EA5D27-7936-4FD3-81AA-59D974EB3E9C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{77EA5D27-7936-4FD3-81AA-59D974EB3E97}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{77EA5D27-7936-4FD3-81AA-59D974EB3E97}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{77EA5D27-7936-4FD3-81AA-59D974EB3E97}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{77EA5D27-7936-4FD3-81AA-59D974EB3E97}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7EA5D27-7936-4FD3-81AA-59D974EB3E9A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7EA5D27-7936-4FD3-81AA-59D974EB3E9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7EA5D27-7936-4FD3-81AA-59D974EB3E9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7EA5D27-7936-4FD3-81AA-59D974EB3E9A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{67EA5D27-7936-4FD3-81AA-59D93DAB3E91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{67EA5D27-7936-4FD3-81AA-59D93DAB3E91}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{67EA5D27-7936-4FD3-81AA-59D93DAB3E91}.Release|Any CPU.ActiveCfg = Release|Any CPU

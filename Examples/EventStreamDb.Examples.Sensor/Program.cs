@@ -3,31 +3,21 @@ using EventStreamDb.Persistance;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace EventStreamDb.Example
+namespace EventStreamDb.Examples.Sensor
 {
-    class Program
+    public class Program
     {
         private static readonly InMemoryPersistanceStore _store = new InMemoryPersistanceStore();
-
-        public static class CurrentTime
-        {
-
-            private static DateTime _currentTime = DateTime.UtcNow;
-
-            public static DateTime GetTime()
-            {
-                _currentTime = _currentTime.AddMinutes(1);
-                return _currentTime;
-            }
-
-        }
+        private static IEventStreamProcessor _eventStream;
 
         static void Main(string[] args)
         {
-            _eventStream = new EventStream(config => config
-                .WithCurrentTime(CurrentTime.GetTime)
-                .WithPersistantStore(_store)
-                .ScanAssemblyWithType<Program>());
+            _eventStream = EventStreamBuilder.Configure(c =>
+                {
+                    c.WithPersistantStore(_store);
+                    c.ScanAssemblyWithType<Program>();
+                })
+                .BuildWithProcessor(TimeSpan.FromMinutes(5));
 
             Console.WriteLine("Streaming events...");
 
@@ -44,6 +34,8 @@ namespace EventStreamDb.Example
                 .Process(new SensorDataReceived(40.5m))
                 .Process(new SensorOffline());
 
+            _eventStream.Shutdown();
+
             Console.WriteLine("Done receiving events");
 
             var eventsStored = _store.GetEvents();
@@ -51,7 +43,6 @@ namespace EventStreamDb.Example
         }
 
         private static UptimeReporter _uptimeReporter = new UptimeReporter();
-        private static EventStream _eventStream;
 
         public class UptimeReporter
         {
@@ -113,10 +104,10 @@ namespace EventStreamDb.Example
         {
             private static readonly List<decimal> _temperatures = new List<decimal>();
 
-            public void Received(SensorDataReceived data, EventMetaData metaData)
+            public void Received(SensorDataReceived @event, EventMetaData metaData)
             {
-                _temperatures.Add(data.Temperature);
-                Console.WriteLine($"Temp: {data.Temperature} (avg: {_temperatures.Average().ToString("0.00")})");
+                _temperatures.Add(@event.Temperature);
+                Console.WriteLine($"Temp: {@event.Temperature} (avg: {_temperatures.Average().ToString("0.00")})");
             }
         }
     }

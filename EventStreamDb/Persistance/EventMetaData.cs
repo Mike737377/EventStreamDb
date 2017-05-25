@@ -12,5 +12,6 @@ namespace EventStreamDb.Persistance
         public string Stream { get; set; }
         public Guid StreamId { get; set; }
         public Type EventType { get; set; }
+        public DateTime Watermark { get; set; }
     }
 }
